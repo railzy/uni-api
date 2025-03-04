@@ -856,7 +856,8 @@ async def process_request(request: Union[RequestModel, ImageGenerationRequest, A
     timeout_value = timeout_value * num_matching_providers
     # print("timeout_value", channel_id, timeout_value)
 
-    proxy = safe_get(provider, "preferences", "proxy", default=None)
+    proxy = safe_get(app.state.config, "preferences", "proxy", default=None)  # global proxy
+    proxy = safe_get(provider, "preferences", "proxy", default=proxy)  # provider proxy
     # print("proxy", proxy)
 
     try:
@@ -1193,7 +1194,7 @@ class ModelRequestHandler:
                 if is_debug:
                     import traceback
                     traceback.print_exc()
-                if auto_retry and status_code != 413:
+                if auto_retry and (status_code != 413 or urlparse(provider.get('base_url', '')).netloc == 'models.inference.ai.azure.com'):
                     continue
                 else:
                     return JSONResponse(
